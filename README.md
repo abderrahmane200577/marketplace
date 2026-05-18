@@ -1,167 +1,121 @@
-# 🛒 Multi-Vendor Marketplace — Backend API
+# Multi-Vendor Marketplace
 
-> Laravel 11 · PostgreSQL · Redis · Docker · Sanctum
+Laravel API with a Next.js frontend for a multi-vendor e-commerce marketplace.
 
----
+## Stack
 
-## 📁 Project Structure
+- Backend: Laravel 11 API
+- Auth: Laravel Sanctum
+- Frontend: Next.js
+- Database: PostgreSQL
+- Cache: Redis
+- DevOps: Docker
 
-```
-marketplace/
-├── docker-compose.yml
-├── docker/
-│   ├── Dockerfile
-│   ├── nginx/default.conf
-│   └── php/local.ini
-├── .env.example
-├── app/
-│   ├── bootstrap/app.php              ← Middleware registration
-│   ├── Http/
-│   │   ├── Controllers/Auth/
-│   │   │   └── AuthController.php     ← Register, Login, Logout, Verify, Reset
-│   │   └── Middleware/
-│   │       ├── RoleMiddleware.php      ← RBAC: role:admin,vendor,customer
-│   │       └── VendorApprovedMiddleware.php
-│   ├── Models/
-│   │   ├── User.php
-│   │   └── Vendor.php
-│   └── routes/
-│       └── api.php
-├── database/
-│   ├── migrations/                    ← All 8 migration files
-│   └── DatabaseSeeder.php
-└── docs/
-    └── marketplace-api.postman_collection.json
-```
-
----
-
-## 🚀 Setup (Step by Step)
-
-### 1. Create Laravel Project
+## Setup
 
 ```bash
-composer create-project laravel/laravel marketplace
-cd marketplace
-composer require laravel/sanctum
-```
-
-### 2. Copy the files from this package
-
-Copy each file from this package into your Laravel project at the matching path shown above.
-
-For `bootstrap/app.php`, **replace** the existing one.  
-For `routes/api.php`, **replace** the existing one.
-
-### 3. Configure Environment
-
-```bash
-cp .env.example .env
-```
-
-Edit `.env` — the DB values are already set for Docker. If you run locally, adjust `DB_HOST=127.0.0.1`.
-
-### 4. Start Docker
-
-```bash
+cd C:\Users\dell\marketplace
 docker-compose up -d --build
 ```
 
-Services started:
-| Service   | URL                          |
-|-----------|------------------------------|
-| API       | http://localhost:8000        |
-| pgAdmin   | http://localhost:5050        |
-| PostgreSQL| localhost:5432               |
-| Redis     | localhost:6379               |
-
-### 5. Install dependencies & run migrations
+Inside the app container:
 
 ```bash
-# Enter the app container
-docker exec -it marketplace_app bash
-
-# Inside container:
 composer install
 php artisan key:generate
 php artisan migrate
 php artisan db:seed
 ```
 
-### 6. Test the API
+Frontend:
 
 ```bash
-# Health check
-curl http://localhost:8000/api/health
-
-# Login as admin
-curl -X POST http://localhost:8000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"admin@marketplace.com","password":"Admin@12345"}'
+cd C:\Users\dell\marketplace\marketplace-frontend
+npm install
+npm run dev
 ```
 
-Import `docs/marketplace-api.postman_collection.json` into Postman for all endpoints.
+## Demo Accounts
 
----
+| Role | Email | Password |
+| --- | --- | --- |
+| Admin | admin@marketplace.com | Admin@12345 |
+| Vendor | vendor@marketplace.com | Vendor@12345 |
+| Customer | customer@marketplace.com | Customer@12345 |
 
-## 🔐 Demo Accounts (after seeding)
+## Week 1 Features
 
-| Role     | Email                       | Password        |
-|----------|-----------------------------|-----------------|
-| Admin    | admin@marketplace.com       | Admin@12345     |
-| Vendor   | vendor@marketplace.com      | Vendor@12345    |
-| Customer | customer@marketplace.com    | Customer@12345  |
+- Docker project setup.
+- Database schema for users, vendors, categories, products, inventory, carts, orders, and messages.
+- Register and login with Sanctum tokens.
+- Email verification and password reset endpoints.
+- Role-based middleware for admin, vendor, and customer.
 
----
+## Week 2 Features
 
-## 🗄️ Database Schema
+- Admin can list, view, approve, reject, suspend, and reactivate vendors.
+- Vendor can view dashboard stats.
+- Vendor can view and update store profile.
+- Vendor can create, list, view, update, and delete products.
+- Product management supports categories, images, variants, SKU, price, status, and stock.
+- Public users can browse active products.
+- Basic frontend UI includes product cards, login panel, vendor dashboard, product form, and admin vendor panel.
+- Postman collection includes Week 2 endpoints.
 
-```
-users ──┬── vendors ──── products ──┬── product_images
-        │                           ├── product_variants
-        │                           └── inventory ──── inventory_logs
-        │
-        ├── orders (customer) ────── order_items (vendor_id FK)
-        ├── carts ──────────────── cart_items
-        └── messages (sender/receiver)
-```
+## API Endpoints
 
----
+### Public
 
-## 🛣️ API Endpoints (Week 1)
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| GET | `/api/health` | API health check |
+| POST | `/api/auth/register` | Register customer or vendor |
+| POST | `/api/auth/login` | Login and get token |
+| GET | `/api/categories` | List categories |
+| GET | `/api/categories/{id}` | Show category |
+| GET | `/api/products` | List active products |
+| GET | `/api/products/{id}` | Show active product |
 
-### Auth (public)
-| Method | Endpoint                        | Description              |
-|--------|---------------------------------|--------------------------|
-| POST   | `/api/auth/register`            | Register customer/vendor |
-| POST   | `/api/auth/login`               | Login → returns token    |
-| GET    | `/api/auth/verify-email/{token}`| Email verification       |
-| POST   | `/api/auth/forgot-password`     | Send reset email         |
-| POST   | `/api/auth/reset-password`      | Reset with token         |
+### Vendor
 
-### Auth (protected)
-| Method | Endpoint                        | Description              |
-|--------|---------------------------------|--------------------------|
-| GET    | `/api/auth/me`                  | Current user profile     |
-| POST   | `/api/auth/logout`              | Invalidate token         |
-| POST   | `/api/auth/resend-verification` | Resend verify email      |
+Use a vendor Bearer token.
 
-### Middleware aliases
-```php
-'role:admin'            // Admin only
-'role:vendor'           // Vendor only
-'role:customer'         // Customer only
-'role:admin,vendor'     // Admin or Vendor
-'vendor.approved'       // Vendor must be approved
-```
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| GET | `/api/vendor/dashboard` | Vendor dashboard |
+| GET | `/api/vendor/profile` | Store profile |
+| PUT | `/api/vendor/profile` | Update store profile |
+| GET | `/api/vendor/products` | List vendor products |
+| POST | `/api/vendor/products` | Create product |
+| GET | `/api/vendor/products/{id}` | Show product |
+| PUT | `/api/vendor/products/{id}` | Update product |
+| DELETE | `/api/vendor/products/{id}` | Delete product |
+| POST | `/api/vendor/products/{id}/images` | Add product images |
+| DELETE | `/api/vendor/products/{id}/images/{imageId}` | Delete product image |
 
----
+### Admin
 
-## 📅 Roadmap
+Use an admin Bearer token.
 
-- [x] **Week 1** — Docker · Auth · DB Schema ← *you are here*
-- [ ] **Week 2** — Vendor & Product Management
-- [ ] **Week 3** — Cart · Checkout · Orders
-- [ ] **Week 4** — Inventory · CRM Messaging
-- [ ] **Week 5** — Admin Dashboard · Analytics
-- [ ] **Week 6** — Stripe · Notifications · Reviews
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| GET | `/api/admin/dashboard` | Admin dashboard |
+| GET | `/api/admin/users` | List users |
+| GET | `/api/admin/vendors` | List vendors |
+| GET | `/api/admin/vendors/{id}` | Show vendor |
+| PATCH | `/api/admin/vendors/{id}/approve` | Approve vendor |
+| PATCH | `/api/admin/vendors/{id}/reject` | Reject vendor |
+| PATCH | `/api/admin/vendors/{id}/suspend` | Suspend vendor |
+| PATCH | `/api/admin/vendors/{id}/reactivate` | Reactivate vendor |
+| POST | `/api/admin/categories` | Create category |
+| PUT | `/api/admin/categories/{id}` | Update category |
+| DELETE | `/api/admin/categories/{id}` | Delete category |
+
+## Roadmap
+
+- [x] Week 1 - Docker, Auth, DB Schema
+- [x] Week 2 - Vendor and Product Management + Basic Frontend UI
+- [ ] Week 3 - Cart, Checkout, Orders
+- [ ] Week 4 - Inventory, CRM Messaging
+- [ ] Week 5 - Admin Dashboard, Analytics
+- [ ] Week 6 - Stripe, Notifications, Reviews
